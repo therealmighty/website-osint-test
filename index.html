@@ -1,1 +1,113 @@
-g
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>website-osint — frontend</title>
+  <style>
+    /* Simple, clean styles (no external libs) */
+    :root{--bg:#0f1724;--card:#0b1220;--muted:#9aa4b2;--accent:#6ee7b7}
+    html,body{height:100%;margin:0;font-family:Inter,ui-sans-serif,system-ui,Helvetica,Arial}
+    body{background:linear-gradient(180deg,#071029 0%, #071a2b 100%);color:#e6eef6;display:flex;align-items:center;justify-content:center;padding:24px}
+    .container{width:100%;max-width:980px}
+    header{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+    header h1{margin:0;font-size:20px}
+    .card{background:rgba(255,255,255,0.03);border-radius:12px;padding:18px;box-shadow:0 6px 18px rgba(2,6,23,0.6)}
+    .row{display:flex;gap:12px;align-items:center}
+    label{font-size:13px;color:var(--muted)}
+    input[type=text], select{background:transparent;border:1px solid rgba(255,255,255,0.06);padding:10px 12px;border-radius:8px;color:inherit;min-width:0}
+    button{background:var(--accent);border:none;padding:10px 14px;border-radius:10px;font-weight:600;cursor:pointer}
+    .flex{display:flex}
+    .col{display:flex;flex-direction:column;gap:8px}
+    .results{margin-top:12px;max-height:420px;overflow:auto;border-radius:8px;padding:12px;background:rgba(0,0,0,0.2)}
+    pre{white-space:pre-wrap;font-size:13px;margin:0}
+    footer{margin-top:12px;color:var(--muted);font-size:13px}
+    @media (max-width:640px){.row{flex-direction:column;align-items:stretch}}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <img alt="logo" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='36' height='36' viewBox='0 0 24 24' fill='none'><rect width='24' height='24' rx='6' fill='%236ee7b7'/></svg>" style="border-radius:8px"/>
+      <h1>website-osint — frontend</h1>
+    </header>
+
+    <div class="card">
+      <div class="col">
+        <div class="row">
+          <div style="flex:1">
+            <label for="query">Query (username, email, or IP)</label>
+            <input id="query" type="text" placeholder="e.g. alice, alice@example.com, 8.8.8.8" />
+          </div>
+
+          <div style="width:160px">
+            <label for="type">Type</label>
+            <select id="type">
+              <option value="username">username</option>
+              <option value="email">email</option>
+              <option value="ip">ip</option>
+            </select>
+          </div>
+
+          <div style="width:220px">
+            <label for="apiKey">API Key</label>
+            <input id="apiKey" type="text" placeholder="X-API-Key header (optional on demo)" />
+          </div>
+
+          <div style="align-self:end">
+            <button id="searchBtn">Search</button>
+          </div>
+        </div>
+
+        <div class="results" id="results" aria-live="polite">
+          <pre id="output">No results yet — enter a query and press Search.</pre>
+        </div>
+
+        <footer>
+          <div>Backend URL: <code id="backendUrl">http://localhost:8000</code></div>
+          <div style="margin-top:6px">Tip: enable CORS in the FastAPI backend (see instructions). This is a simple demo UI — do not use for sensitive data without HTTPS and auth.</div>
+        </footer>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const btn = document.getElementById('searchBtn');
+    const out = document.getElementById('output');
+    const backendEl = document.getElementById('backendUrl');
+
+    function setOutput(o){ out.textContent = typeof o === 'string' ? o : JSON.stringify(o, null, 2) }
+
+    async function doSearch(){
+      const q = document.getElementById('query').value.trim();
+      const t = document.getElementById('type').value;
+      const apikey = document.getElementById('apiKey').value.trim();
+      if(!q){ setOutput('Please enter a query.'); return }
+
+      setOutput('Searching...');
+      const payload = { query: q, type: t };
+      const url = backendEl.textContent.replace(/\/$/, '') + '/search';
+      try{
+        const headers = { 'Content-Type': 'application/json' };
+        if(apikey) headers['X-API-Key'] = apikey;
+        const resp = await fetch(url, { method: 'POST', headers, body: JSON.stringify(payload) });
+        if(!resp.ok){
+          const text = await resp.text();
+          setOutput({ status: resp.status, body: text });
+          return;
+        }
+        const data = await resp.json();
+        setOutput(data);
+      }catch(e){
+        setOutput('Request failed: ' + e.toString());
+      }
+    }
+
+    btn.addEventListener('click', doSearch);
+
+    // allow Enter key on query
+    document.getElementById('query').addEventListener('keydown', (e)=>{ if(e.key === 'Enter') doSearch() });
+  </script>
+</body>
+</html>
