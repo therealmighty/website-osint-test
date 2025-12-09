@@ -11,15 +11,15 @@
       --bg: #050505;
       --panel: #0a0f14;
       --border: #1f2937;
-      --primary: #00f0ff; 
-      --secondary: #7000ff; 
+      --primary: #00f0ff;
+      --secondary: #7000ff;
       --text: #c9d1d9;
       --success: #00ff9d;
       --error: #ff0055;
     }
 
     * { box-sizing: border-box; }
-
+    
     html, body {
       height: 100%; margin: 0;
       font-family: 'JetBrains Mono', monospace;
@@ -31,7 +31,7 @@
     body::before {
       content: "";
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background-image: 
+      background-image:  
         linear-gradient(rgba(31, 41, 55, 0.1) 1px, transparent 1px),
         linear-gradient(90deg, rgba(31, 41, 55, 0.1) 1px, transparent 1px);
       background-size: 40px 40px;
@@ -168,7 +168,6 @@
   </style>
 </head>
 <body>
-
   <div class="container">
     <header>
       <div style="display:flex; align-items:center; gap:15px;">
@@ -220,83 +219,85 @@
     </div>
 
     <footer>
-      <div>CONNECTED: <span id="backendUrl" style="color:var(--text)">http://localhost:8000</span></div>
+      <div>CONNECTED: <span id="backendUrl" style="color:var(--text)">Loading...</span></div>
       <div>SECURE CONNECTION // ENCRYPTED</div>
     </footer>
   </div>
 
-<script>
-const btn = document.getElementById('searchBtn');
-const content = document.getElementById('resultsContent');
-const scanner = document.getElementById('scanner');
-const backendEl = document.getElementById('backendUrl');
+  <script>
+    const btn = document.getElementById('searchBtn');
+    const content = document.getElementById('resultsContent');
+    const scanner = document.getElementById('scanner');
 
-// Format JSON into HTML
-function formatData(data) {
-    if (data === null) return 'null';
-    if (typeof data === 'string') return `<span class="json-string">"${data}"</span>`;
-    if (typeof data === 'number') return `<span class="json-number">${data}</span>`;
-    if (Array.isArray(data)) return data.length ? data.map(item => `<div class="result-card">${formatData(item)}</div>`).join('') : '[]';
-    if (typeof data === 'object') {
+    // Your deployed Railway backend
+    const backendUrl = 'https://web-production-15478.up.railway.app';
+
+    function formatData(data) {
+      if (typeof data === 'string') return `<span class="json-string">"${data}"</span>`;
+      if (typeof data === 'number') return `<span class="json-number">${data}</span>`;
+
+      if (Array.isArray(data)) {
+        if (data.length === 0) return '[]';
+        return data.map(item => `<div class="result-card">${formatData(item)}</div>`).join('');
+      }
+
+      if (typeof data === 'object' && data !== null) {
         let html = '<div style="margin-left:10px">';
         for (const [key, value] of Object.entries(data)) {
-            html += `<div><span class="json-key">${key}:</span> ${formatData(value)}</div>`;
+          html += `<div><span class="json-key">${key}:</span> ${formatData(value)}</div>`;
         }
         html += '</div>';
         return html;
+      }
+      return data;
     }
-    return String(data);
-}
 
-// Main search function
-async function doSearch() {
-    const query = document.getElementById('query').value.trim();
-    const type = document.getElementById('type').value;
-    const apiKey = document.getElementById('apiKey').value.trim();
-    const url = backendEl.textContent.replace(/\/$/, '') + '/search';
+    async function doSearch() {
+      const q = document.getElementById('query').value.trim();
+      const t = document.getElementById('type').value;
+      const apikey = document.getElementById('apiKey').value.trim();
 
-    if (!query) {
-        content.innerHTML = '<div style="color:var(--error)">ERROR: NULL TARGET. Enter a query.</div>';
+      if (!q) {
+        content.innerHTML = '<div style="color:var(--error)">ERROR: NULL TARGET. Please enter a query.</div>';
         return;
-    }
+      }
 
-    // Remove empty-state
-    const emptyState = content.querySelector('.empty-state');
-    if (emptyState) emptyState.remove();
+      scanner.style.display = 'block';
+      content.style.opacity = '0.5';
+      btn.innerText = 'SCANNING...';
+      btn.disabled = true;
 
-    // UI loading
-    scanner.style.display = 'block';
-    content.style.opacity = '0.5';
-    btn.innerText = 'SCANNING...';
-    btn.disabled = true;
+      const payload = { query: q, type: t };
+      const url = backendUrl + '/search';
 
-    try {
+      try {
         const headers = { 'Content-Type': 'application/json' };
-        if (apiKey) headers['X-API-Key'] = apiKey;
+        if (apikey) headers['X-API-Key'] = apikey;
 
-        // Use try-catch to detect fetch errors
-        const resp = await fetch(url, { method: 'POST', headers, body: JSON.stringify({ query, type }) });
+        const resp = await fetch(url, { method: 'POST', headers, body: JSON.stringify(payload) });
+
         if (!resp.ok) {
-            const text = await resp.text();
-            content.innerHTML = `<div style="color:var(--error)">SERVER ERROR ${resp.status}: ${text}</div>`;
+          const text = await resp.text();
+          content.innerHTML = `<div style="color:var(--error)">SERVER ERROR ${resp.status}: ${text}</div>`;
         } else {
-            const data = await resp.json();
-            content.innerHTML = formatData(data);
+          const data = await resp.json();
+          content.innerHTML = formatData(data);
         }
-    } catch (e) {
-        content.innerHTML = `<div style="color:var(--error)">CONNECTION FAILURE: Could not reach backend.</div>
-                             <br><small>Make sure FastAPI server is running on localhost:8000</small>`;
-        console.error("Fetch error:", e);
-    } finally {
+      } catch (e) {
+        content.innerHTML = `<div style="color:var(--error)">CONNECTION FAILURE: ${e.toString()}</div>`;
+      } finally {
         scanner.style.display = 'none';
         content.style.opacity = '1';
         btn.innerText = 'EXECUTE';
         btn.disabled = false;
+      }
     }
-}
 
-btn.addEventListener('click', doSearch);
-document.getElementById('query').addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
-</script>
+    btn.addEventListener('click', doSearch);
+    document.getElementById('query').addEventListener('keydown', (e) => { if (e.key === 'Enter') doSearch() });
+
+    // Display backend URL in footer
+    document.getElementById('backendUrl').textContent = backendUrl;
+  </script>
 </body>
 </html>
