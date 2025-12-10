@@ -1,303 +1,130 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>OATHNET :: INTEL DASHBOARD</title>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-  
-  <style>
-    :root {
-      --bg: #050505;
-      --panel: #0a0f14;
-      --border: #1f2937;
-      --primary: #00f0ff;
-      --secondary: #7000ff;
-      --text: #c9d1d9;
-      --success: #00ff9d;
-      --error: #ff0055;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Website-OSINT</title>
 
-    * { box-sizing: border-box; }
-    
-    html, body {
-      height: 100%; margin: 0;
-      font-family: 'JetBrains Mono', monospace;
-      background-color: var(--bg);
-      color: var(--text);
-      overflow-x: hidden;
-    }
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #0d1117;
+            color: white;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
 
-    body::before {
-      content: "";
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background-image:  
-        linear-gradient(rgba(31, 41, 55, 0.1) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(31, 41, 55, 0.1) 1px, transparent 1px);
-      background-size: 40px 40px;
-      z-index: -1;
-      pointer-events: none;
-    }
+        h1 {
+            margin-top: 40px;
+            font-size: 2rem;
+            letter-spacing: 1px;
+            color: #58a6ff;
+        }
 
-    .container {
-      width: 100%; max-width: 1000px;
-      margin: 0 auto; padding: 40px 20px;
-      display: flex; flex-direction: column; gap: 24px;
-    }
+        .box {
+            margin-top: 20px;
+            background: #161b22;
+            padding: 20px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 0 10px #000;
+        }
 
-    header {
-      border-bottom: 1px solid var(--border);
-      padding-bottom: 20px;
-      margin-bottom: 20px;
-      display: flex; align-items: center; justify-content: space-between;
-    }
-    
-    h1 {
-      margin: 0; font-size: 24px; letter-spacing: -1px;
-      text-transform: uppercase;
-      background: linear-gradient(90deg, var(--primary), #fff);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
+        input {
+            width: 100%;
+            padding: 12px;
+            border-radius: 6px;
+            border: none;
+            margin-bottom: 15px;
+            background: #0d1117;
+            color: white;
+            font-size: 1rem;
+        }
 
-    .status-indicator {
-      font-size: 12px; color: var(--success);
-      display: flex; align-items: center; gap: 8px;
-    }
-    .status-dot {
-      width: 8px; height: 8px; background: var(--success);
-      border-radius: 50%; box-shadow: 0 0 10px var(--success);
-      animation: pulse 2s infinite;
-    }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #238636;
+            border: none;
+            border-radius: 6px;
+            color: white;
+            font-size: 1rem;
+            cursor: pointer;
+        }
 
-    .panel {
-      background: rgba(10, 15, 20, 0.8);
-      border: 1px solid var(--border);
-      backdrop-filter: blur(10px);
-      border-radius: 4px;
-      padding: 24px;
-      box-shadow: 0 0 20px rgba(0, 240, 255, 0.05);
-    }
+        button:hover {
+            background: #2ea043;
+        }
 
-    .search-grid {
-      display: grid;
-      grid-template-columns: 3fr 1fr 1fr auto;
-      gap: 16px;
-      align-items: end;
-    }
-
-    label {
-      display: block; font-size: 11px; text-transform: uppercase;
-      color: var(--primary); margin-bottom: 6px; letter-spacing: 1px;
-    }
-
-    input, select {
-      width: 100%; background: #000;
-      border: 1px solid var(--border);
-      color: #fff; padding: 12px 16px;
-      font-family: inherit; font-size: 14px;
-      transition: all 0.2s;
-      border-radius: 2px;
-    }
-
-    input:focus, select:focus {
-      outline: none;
-      border-color: var(--primary);
-      box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
-    }
-
-    button {
-      background: var(--primary); color: #000;
-      border: none; padding: 12px 24px;
-      font-family: inherit; font-weight: 700;
-      text-transform: uppercase; cursor: pointer;
-      border-radius: 2px;
-      transition: all 0.2s;
-    }
-
-    button:hover {
-      background: #fff;
-      box-shadow: 0 0 20px var(--primary);
-    }
-
-    .results-area {
-      min-height: 200px;
-      position: relative;
-    }
-
-    .json-key { color: var(--primary); }
-    .json-string { color: var(--success); }
-    .json-number { color: #ff9d00; }
-
-    .result-card {
-      background: rgba(255,255,255,0.02);
-      border-left: 3px solid var(--border);
-      padding: 12px; margin-bottom: 8px;
-      transition: all 0.2s;
-    }
-    .result-card:hover {
-      border-left-color: var(--primary);
-      background: rgba(255,255,255,0.04);
-    }
-
-    .empty-state {
-      text-align: center; color: #444; margin-top: 40px;
-      border: 1px dashed #333; padding: 40px;
-    }
-
-    .scanner {
-      height: 2px; width: 100%;
-      background: linear-gradient(90deg, transparent, var(--primary), transparent);
-      position: absolute; top: 0; left: 0;
-      animation: scan 1.5s infinite linear;
-      display: none;
-    }
-
-    footer {
-      margin-top: auto; border-top: 1px solid var(--border);
-      padding-top: 20px; display: flex; justify-content: space-between;
-      font-size: 11px; color: #555;
-    }
-
-    @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
-    @keyframes scan { 0% { left: -100%; } 100% { left: 100%; } }
-
-    @media (max-width: 768px) {
-      .search-grid { grid-template-columns: 1fr; }
-    }
-  </style>
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-size: 0.9rem;
+            background: #0d1117;
+            padding: 12px;
+            border-radius: 5px;
+            border: 1px solid #30363d;
+        }
+    </style>
 </head>
+
 <body>
-  <div class="container">
-    <header>
-      <div style="display:flex; align-items:center; gap:15px;">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2">
-          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-        </svg>
-        <h1>INTEL_DASHBOARD <span style="font-size:12px; opacity:0.5">v2.0</span></h1>
-      </div>
-      <div class="status-indicator">
-        <div class="status-dot"></div> SYSTEM ONLINE
-      </div>
-    </header>
 
-    <div class="panel">
-      <div class="search-grid">
-        <div>
-          <label for="query">Target Identifier</label>
-          <input id="query" type="text" placeholder="username | email | IP address" autocomplete="off" />
-        </div>
+    <h1>Website-OSINT</h1>
 
-        <div>
-          <label for="type">Module</label>
-          <select id="type">
-            <option value="username">GENERIC_USERNAME</option>
-            <option value="discord_id">DISCORD_ID</option>
-            <option value="discord_name">DISCORD_NAME</option>
-            <option value="email">EMAIL_BREACH</option>
-            <option value="ip">NET_RECON</option>
-          </select>
-        </div>
-
-        <div>
-          <label for="apiKey">Auth Token</label>
-          <input id="apiKey" type="password" placeholder="••••••••" />
-        </div>
-
-        <button id="searchBtn">EXECUTE</button>
-      </div>
+    <div class="box">
+        <input id="query" placeholder="Enter email, Discord ID, or Roblox username...">
+        <button onclick="runScan()">Scan</button>
     </div>
 
-    <div class="panel results-area">
-      <div id="scanner" class="scanner"></div>
-      <div id="resultsContent">
-        <div class="empty-state">
-          [ AWAITING INPUT ]<br>
-          Enter a target above to initialize scanning protocols.
-        </div>
-      </div>
+    <div class="box">
+        <h3>Results</h3>
+        <div id="result"><i>No scan performed yet.</i></div>
     </div>
 
-    <footer>
-      <div>CONNECTED: <span id="backendUrl" style="color:var(--text)">Loading...</span></div>
-      <div>SECURE CONNECTION // ENCRYPTED</div>
-    </footer>
-  </div>
 
-  <script>
-    const btn = document.getElementById('searchBtn');
-    const content = document.getElementById('resultsContent');
-    const scanner = document.getElementById('scanner');
+<script>
+async function runScan() {
+    const input = document.getElementById("query").value.trim();
+    const resultBox = document.getElementById("result");
 
-    // Your deployed Railway backend
-    const backendUrl = 'https://web-production-15478.up.railway.app';
-
-    function formatData(data) {
-      if (typeof data === 'string') return `<span class="json-string">"${data}"</span>`;
-      if (typeof data === 'number') return `<span class="json-number">${data}</span>`;
-
-      if (Array.isArray(data)) {
-        if (data.length === 0) return '[]';
-        return data.map(item => `<div class="result-card">${formatData(item)}</div>`).join('');
-      }
-
-      if (typeof data === 'object' && data !== null) {
-        let html = '<div style="margin-left:10px">';
-        for (const [key, value] of Object.entries(data)) {
-          html += `<div><span class="json-key">${key}:</span> ${formatData(value)}</div>`;
-        }
-        html += '</div>';
-        return html;
-      }
-      return data;
-    }
-
-    async function doSearch() {
-      const q = document.getElementById('query').value.trim();
-      const t = document.getElementById('type').value;
-      const apikey = document.getElementById('apiKey').value.trim();
-
-      if (!q) {
-        content.innerHTML = '<div style="color:var(--error)">ERROR: NULL TARGET. Please enter a query.</div>';
+    if (!input) {
+        resultBox.innerHTML = "Please enter something to scan.";
         return;
-      }
-
-      scanner.style.display = 'block';
-      content.style.opacity = '0.5';
-      btn.innerText = 'SCANNING...';
-      btn.disabled = true;
-
-      const payload = { query: q, type: t };
-      const url = backendUrl + '/search';
-
-      try {
-        const headers = { 'Content-Type': 'application/json' };
-        if (apikey) headers['X-API-Key'] = apikey;
-
-        const resp = await fetch(url, { method: 'POST', headers, body: JSON.stringify(payload) });
-
-        if (!resp.ok) {
-          const text = await resp.text();
-          content.innerHTML = `<div style="color:var(--error)">SERVER ERROR ${resp.status}: ${text}</div>`;
-        } else {
-          const data = await resp.json();
-          content.innerHTML = formatData(data);
-        }
-      } catch (e) {
-        content.innerHTML = `<div style="color:var(--error)">CONNECTION FAILURE: ${e.toString()}</div>`;
-      } finally {
-        scanner.style.display = 'none';
-        content.style.opacity = '1';
-        btn.innerText = 'EXECUTE';
-        btn.disabled = false;
-      }
     }
 
-    btn.addEventListener('click', doSearch);
-    document.getElementById('query').addEventListener('keydown', (e) => { if (e.key === 'Enter') doSearch() });
+    resultBox.innerHTML = "Scanning...";
 
-    // Display backend URL in footer
-    document.getElementById('backendUrl').textContent = backendUrl;
-  </script>
+    const backend = "https://web-production-15478.up.railway.app";
+    let endpoint = "";
+
+    // Detect email
+    if (input.includes("@")) {
+        endpoint = `/scan/email/${input}`;
+    }
+    // Detect Discord ID (17–19 digits)
+    else if (/^\d{17,19}$/.test(input)) {
+        endpoint = `/scan/discord/${input}`;
+    }
+    // Default → Roblox username
+    else {
+        endpoint = `/scan/roblox/${input}`;
+    }
+
+    try {
+        const response = await fetch(backend + endpoint);
+        const data = await response.json();
+
+        resultBox.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+    } catch (err) {
+        resultBox.innerHTML = "Error: Could not contact backend.";
+    }
+}
+</script>
+
 </body>
 </html>
